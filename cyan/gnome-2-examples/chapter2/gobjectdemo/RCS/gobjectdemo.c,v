@@ -1,0 +1,1099 @@
+head	1.1;
+access;
+symbols;
+locks
+	bri:1.1; strict;
+comment	@ * @;
+
+
+1.1
+date	2003.06.01.04.09.15;	author bri;	state Exp;
+branches;
+next	;
+
+
+desc
+@GObject demonstration
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#undef G_LOG_DOMAIN
+#define G_LOG_DOMAIN "GObjectDemo"
+
+#include <glib-object.h>
+
+/**************** Structure definitions *************/
+
+/* instance structure */
+typedef struct _Media {
+  GObject parent_instance;
+
+  guint inv_nr;
+  GString *location;
+  GString *title;
+  gboolean orig_package;
+
+} Media;
+
+/* class structure */
+typedef struct _MediaClass {
+  GObjectClass parent_class;
+
+  /* Signal handlers */
+  void (*unpack)(Media *media);
+  void (*throw_out)(Media *media, gboolean permanent);
+} MediaClass;
+
+/****************** Utility Macros ******************/
+
+#define TYPE_MEDIA (media_get_type())
+
+#define MEDIA(object) \
+    (G_TYPE_CHECK_INSTANCE_CAST((object), TYPE_MEDIA, Media))
+
+#define MEDIA_CLASS(klass) \
+    (G_TYPE_CHECK_CLASS_CAST((klass), TYPE_MEDIA, MediaClass))
+
+#define IS_MEDIA(object) \
+    (G_TYPE_CHECK_INSTANCE_TYPE((object), TYPE_MEDIA))
+
+#define IS_MEDIA_CLASS(class) \
+    (G_TYPE_CHECK_CLASS_TYPE((klass), TYPE_MEDIA))
+
+#define MEDIA_GET_CLASS(object) \
+    (G_TYPE_INSTANCE_GET_CLASS((object), TYPE_MEDIA, MediaClass))
+
+/******** Register Media class type identifier *********/
+
+/* prototype for class initializer */
+static void media_class_init(MediaClass *class);
+
+/* get the identifier */
+GType media_get_type(void) {
+    static GType media_type = 0;
+
+    if (!media_type) {
+        const GTypeInfo media_info = {
+            sizeof(MediaClass),   /* class structure size */
+            NULL,                 /* base class initializer */
+            NULL,                 /* base class finalizer */
+            (GClassInitFunc)media_class_init,
+                    	          /* class initializer */
+            NULL,                 /* class finalizer */
+            NULL,                 /* class data */
+            sizeof(Media),        /* instance structure size */
+            16,                   /* number of preallocated instances */
+            NULL                  /* instance initializer */
+        };
+
+        media_type =
+           g_type_register_static(
+	       G_TYPE_OBJECT,     /* parent class */
+               "Media",           /* type name */
+               &media_info,       /* GTypeInfo struct (above) */
+               0);                /* flags */
+    }
+
+  return media_type;
+}
+
+
+/********** Media class initialization ***********/
+
+/* Prototypes and constants for property manipulation */
+
+static void media_set_property(GObject *object,
+                                guint prop_id,
+                                const GValue *wert,
+                                GParamSpec *pspec);
+
+static void media_get_property(GObject *object,
+                                guint prop_id,
+                                GValue *wert,
+                                GParamSpec *pspec);
+
+enum {
+  PROP_0,
+  PROP_INV_NR,
+  PROP_ORIG_PACKAGE
+};
+
+/* Signal prototypes */
+
+/* Signal indexes */
+enum
+{
+  UNPACK,
+  THROW_OUT,
+  LAST_SIGNAL
+};
+
+/* Signal identifier map */
+static guint media_signal[LAST_SIGNAL] = {0};
+
+/* Prototypes for signal handlers */
+static void media_unpack(Media *media);
+static void media_throw_out(Media *media, gboolean permanent);
+
+/* Initialize the Media class */
+static void media_class_init(MediaClass *class) {
+  GParamSpec *inv_nr_param;
+  GParamSpec *orig_package_param;
+  GObjectClass *g_object_class;
+
+  /* get handle to base object */
+  g_object_class = G_OBJECT_CLASS(class);
+
+  /* << miscellaneous initialization >> */
+
+  /* create GParamSpec descriptions for properties */
+  inv_nr_param =
+    g_param_spec_uint("inv_nr",           /* identifier */
+                      "inventory number", /* nickname */
+		                          /* description */
+                      "the number on the inventory label",
+                      0,                  /* minimum */
+                      UINT_MAX,           /* maximum */
+                      0,                  /* default */
+                      G_PARAM_READWRITE); /* flags */
+
+  orig_package_param =
+    g_param_spec_boolean("orig_package",
+                         "original package?",
+                         "is item in its original package?",
+                         FALSE,
+                         G_PARAM_READWRITE);
+
+  /* override base object methods */
+  g_object_class->set_property = media_set_property;
+  g_object_class->get_property = media_get_property;
+
+  /* install properties */
+  g_object_class_install_property(g_object_class,
+                                  PROP_INV_NR,
+                                  inv_nr_param);
+
+  g_object_class_install_property(g_object_class,
+                                  PROP_ORIG_PACKAGE,
+                                  orig_package_param);
+
+  /* set signal handlers */
+  class->unpack = media_unpack;
+  class->throw_out = media_throw_out;
+
+  /* install signals and default handlers */
+  media_signal[UNPACK] =
+    g_signal_new("unpack",      /* name */
+                 TYPE_MEDIA,    /* class type identifier */
+                                /* options */
+                 G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,
+                                /* default handler offset */
+                 G_STRUCT_OFFSET(MediaClass, unpack),
+                 NULL,          /* accumulator function */
+		 NULL,          /* accumulator data */
+                                /* marshaller */
+                 g_cclosure_marshal_VOID__VOID,
+                 G_TYPE_NONE,   /* type of return value */
+                 0);			   
+
+  media_signal[THROW_OUT] =
+    g_signal_new("throw_out",
+                 TYPE_MEDIA,
+                 G_SIGNAL_RUN_LAST|G_SIGNAL_DETAILED,
+                 G_STRUCT_OFFSET(MediaClass, throw_out),
+                 NULL, NULL,
+                 g_cclosure_marshal_VOID__BOOLEAN,
+                 G_TYPE_NONE,
+                 1,
+                 G_TYPE_BOOLEAN);
+}
+
+/* how media sets properties */
+static void media_set_property(GObject *object,
+                               guint prop_id,
+                               const GValue *value,
+                               GParamSpec *pspec)
+{
+    Media *media;
+    guint new_inv_nr;
+    gboolean new_orig_package;
+
+    media = MEDIA(object);
+
+    switch(prop_id) {
+      case PROP_INV_NR:
+        new_inv_nr = g_value_get_uint(value);
+        if (media->inv_nr != new_inv_nr) {
+            media->inv_nr = new_inv_nr;
+            g_object_notify(G_OBJECT(media), "inv_nr");
+        }
+        break;
+
+      case PROP_ORIG_PACKAGE:
+        new_orig_package = g_value_get_boolean(value);
+        if (media->orig_package != new_orig_package) {
+            media->orig_package = new_orig_package;
+            g_object_notify(G_OBJECT(media), "orig_package");
+        }
+        break;
+
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
+}
+
+/* how media retrieves properties */
+static void media_get_property(GObject *object,
+                               guint prop_id,
+                               GValue *value,
+                               GParamSpec *pspec)
+{
+    Media *media;
+
+    media = MEDIA(object);
+  
+    switch(prop_id) {
+      case PROP_INV_NR:
+        g_value_set_uint(value, media->inv_nr);
+        break;
+
+      case PROP_ORIG_PACKAGE:
+        g_value_set_boolean(value, media->orig_package);
+        break;
+ 
+      default:
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        break;
+    }
+}
+
+/* unpack signal handler */
+static void media_unpack(Media *media) {
+  gboolean packed;
+  
+  g_object_get(media, "orig_package", &packed, NULL);
+  
+  if (packed) {
+    g_object_set(media, "orig_package", FALSE, NULL);
+    g_print("Media unpacked.\n");
+  } else {
+    g_print("Media already unpacked.\n");
+  }
+}
+
+/* throw_out signal handler */
+static void media_throw_out(Media *media, gboolean permanent) {
+  if (permanent) {
+    g_print("Media to be permanently trashed.\n");
+  } else {
+    g_print("Media: Still thinking about getting rid of it.\n");
+  }
+}
+
+/* These signal handlers will be used to test handlers connected
+ * after installation
+ */
+
+static void meep_meep(Media *media);
+static void ding(Media *media);
+static void dong(Media *media);
+
+static void meep_meep(Media *media) {
+  guint nr;
+  g_object_get(media, "inv_nr", &nr, NULL);
+
+  g_print("Meep-meep! (Inventory number: \%d)\n", nr);
+}
+
+static void ding(Media *media) {
+  g_print("Ding.\n");
+}
+
+static void dong(Media *media) {
+  g_print("Dong.\n");
+}
+
+/* A hook */
+
+static gboolean my_hook(GSignalInvocationHint *ihint,
+                        guint n_param_values,
+			const GValue *param_values,
+			gpointer *data);
+
+static gboolean my_hook(GSignalInvocationHint *ihint,
+                        guint n_param_values,
+			const GValue *param_values,
+			gpointer *data) {
+  static gint n = 0;
+  guint inv_nr;
+  Media *m;
+
+  g_print("my_hook(): ", n);
+
+  /* check for a valid Media object */
+  if (n_param_values > 0) {
+    m = MEDIA(g_value_get_object(param_values + 0));
+    if (IS_MEDIA(m)) {
+      g_object_get(m, "inv_nr", &inv_nr, NULL);
+      g_print("inventory number = %d.\n", inv_nr);
+    } else {
+      g_print("called with invalid object\n");
+    }
+  } else {
+    g_print("called with invalid parameters\n");
+  }
+
+  n++;
+  g_print("my_hook(): invocation #%d", n);
+  if (n == 3) {
+    g_print(" (last time)\n");
+    return(FALSE);
+  } else {
+    g_print("\n");
+    return(TRUE);
+  }
+}
+
+/******************* Cleanable schon hier deklarieren ******/
+
+GType cleanable_get_type();
+
+#define TYPE_CLEANABLE (cleanable_get_type())
+#define CLEANABLE(object) \
+        (G_TYPE_CHECK_INSTANCE_CAST((object), \
+                                    TYPE_CLEANABLE, \
+                                    Cleanable)) 
+#define IS_CLEANABLE(object) \
+         (G_TYPE_CHECK_INSTANCE_TYPE((object), \
+                                     TYPE_CLEANABLE))
+#define CLEANABLE_GET_CLASS(object) \
+     (G_TYPE_INSTANCE_GET_INTERFACE((object), \
+                                    TYPE_CLEANABLE, \
+                                    CleanableClass))
+
+typedef struct _Cleanable Cleanable;
+typedef struct _CleanableClass
+{
+  GTypeInterface basis_schnittstelle;
+  void (*reinigen) (Cleanable *object);
+} CleanableClass;
+
+
+/** Access functions for Media (not necessary) **/
+
+#ifdef USE_ACCESS_FUNCTIONS
+
+
+void media_set_orig_package(Media *media, gboolean orig_package) {
+    g_return_if_fail(IS_MEDIA(media));
+
+    if (media->orig_package != orig_package) {
+        media->orig_package = orig_package;
+        g_object_notify(G_OBJECT(media), "orig_package");
+    }
+}
+
+const gboolean media_get_orig_package(Media *media) {
+    g_return_if_fail(IS_MEDIA(media));
+
+    return media->orig_package;
+}
+
+void media_set_inv_nr(Media *media, guint inv_nr) {
+    g_return_if_fail(IS_MEDIA(media));
+
+    if (media->inv_nr != inv_nr) {
+        media->inv_nr = inv_nr;
+        g_object_notify(G_OBJECT(media), "inv_nr");
+    }
+}
+
+const guint media_get_inv_nr(Media *media) {
+    g_return_val_if_fail(IS_MEDIA(media), FALSE);
+
+    return media->inv_nr;
+}
+
+#endif /* USE_ACCESS_FUNCTIONS */
+
+/*                                                 */
+/******** CD (class inherited from Media) **********/
+/*                                                 */
+
+typedef struct _CD {
+  Media media_instance;
+  gboolean writable;
+} CD;
+
+typedef struct _CDClass {
+  MediaClass media_class;
+} CDClass;
+
+#define TYPE_CD (cd_get_type())
+#define CD(object) \
+         (G_TYPE_CHECK_INSTANCE_CAST((object), TYPE_CD, CD))
+
+#define CD_CLASS(klass) \
+         (G_TYPE_CHECK_CLASS_CAST((klass), TYPE_CD, CDClass))
+
+#define IS_CD(object) \
+         (G_TYPE_CHECK_INSTANCE_TYPE((object), TYPE_CD))
+
+#define IS_CD_CLASS(klass) \
+         (G_TYPE_CHECK_CLASS_TYPE((klass), TYPE_CD))
+
+#define CD_GET_CLASS(object) \
+        (G_TYPE_INSTANCE_GET_CLASS((object), TYPE_CD, CDClass))
+
+static void cd_class_init(CDClass *class);
+
+static void cd_cleanable_init(gpointer interface, gpointer data);
+
+GType cd_get_type(void) {
+  static GType cd_type = 0;
+
+  if (!cd_type) {
+     const GTypeInfo cd_info = {
+        sizeof(CDClass),
+        NULL,
+        NULL,
+        (GClassInitFunc)cd_class_init,
+        NULL,
+        NULL,
+        sizeof(CD),
+        16,
+        NULL
+     };
+
+     const GInterfaceInfo cleanable_info = {
+        cd_cleanable_init,
+        NULL,
+        NULL
+     };
+
+     /* Register type, use ID of parent class TYPE_MEDIA */
+     cd_type = g_type_register_static(TYPE_MEDIA,
+                                      "CompactDisc",
+                                      &cd_info,
+                                      0);
+
+     /* add interface */
+     g_type_add_interface_static(cd_type,
+                                 TYPE_CLEANABLE,
+                                 &cleanable_info);
+   }
+
+  return cd_type;
+}
+
+void cd_set_writable(CD *cd,
+						 gboolean writable)
+{
+  g_return_if_fail(IS_CD(cd));
+
+  if (cd->writable != writable)
+	{
+	  cd->writable = writable;
+	  g_object_notify(G_OBJECT(cd), "writable");
+	}
+}
+
+const gboolean cd_get_writable(CD *cd)
+{
+  g_return_if_fail(IS_CD(cd));
+
+  return cd->writable;
+}
+
+enum {
+  PROP_0_CD,
+  PROP_WRITABLE
+};
+
+static void cd_set_property(GObject *object,
+							guint prop_id,
+							const GValue *wert,
+							GParamSpec *pspec)
+{
+  CD *cd;
+  cd = CD(object);
+
+  switch(prop_id)
+	{
+	case PROP_WRITABLE:
+	  cd_set_writable(cd,
+						  g_value_get_boolean(wert));
+	  break;
+
+	default:
+	  G_OBJECT_WARN_INVALID_PROPERTY_ID(object,
+										prop_id,
+										pspec);
+	  break;
+	}
+}
+
+static void cd_get_property(GObject *object,
+							guint prop_id,
+							GValue *wert,
+							GParamSpec *pspec)
+{
+  CD *cd;
+  cd = CD(object);
+
+  switch(prop_id)
+	{
+	case PROP_WRITABLE:
+	  g_value_set_boolean(wert, cd->writable);
+	  break;
+
+	default:
+	  G_OBJECT_WARN_INVALID_PROPERTY_ID(object,
+										prop_id,
+										pspec);
+	  break;
+	}
+}
+
+static void foo()
+{
+	g_print("Foo!\n");
+}
+
+static void cd_class_init(CDClass *class)
+{
+  GObjectClass *g_object_class;
+  MediaClass *media_class;
+ 
+  media_class = MEDIA_CLASS(class);
+  media_class->unpack = foo;
+  
+  g_object_class = G_OBJECT_CLASS(class);
+  g_object_class->set_property = cd_set_property;
+  g_object_class->get_property = cd_get_property;
+
+  g_object_class_install_property(
+      g_object_class,
+	  PROP_WRITABLE,
+	  g_param_spec_boolean("writable", "Writable?",
+     					  "Is the CD writable?",
+						   FALSE,
+                           G_PARAM_READWRITE
+						   |G_PARAM_CONSTRUCT_ONLY));
+}
+
+/**************** Kassette ableiten ****************/
+
+typedef struct _Kassette
+{
+  Media media_instance;
+  gint minuten;
+} Kassette;
+
+typedef struct _KassetteClass
+{
+  MediaClass media_class;
+} KassetteClass;
+
+#define TYPE_KASSETTE (kassette_get_type())
+#define KASSETTE(object) \
+         (G_TYPE_CHECK_INSTANCE_CAST((object), \
+                                     TYPE_KASSETTE, \
+                                     Kassette))
+#define KASSETTE_CLASS(klasse) \
+           (G_TYPE_CHECK_CLASS_CAST((klasse), \
+                                     TYPE_KASSETTE, \
+                                     KassetteClass))
+#define IS_KASSETTE(object) \
+        (G_TYPE_CHECK_INSTANCE_TYPE((object), \
+                                    TYPE_KASSETTE))
+#define IS_KASSETTE_CLASS(klasse) \
+        (G_TYPE_CHECK_CLASS_TYPE((klasse), \
+                                 TYPE_KASSETTE))
+#define KASSETTE_GET_CLASS(object) \
+        (G_TYPE_INSTANCE_GET_CLASS((object), \
+                                   TYPE_KASSETTE, \
+                                   KassetteClass))
+
+static void
+kassette_class_init(KassetteClass *klasse);
+
+static void
+kassette_cleanable_init(gpointer interface, gpointer data);
+
+GType kassette_get_type(void)
+{
+  static GType kassette_type = 0;
+
+  if (!kassette_type)
+	{
+	  const GTypeInfo kassette_info =
+		{
+		  sizeof(KassetteClass),
+          NULL,
+          NULL,
+          (GClassInitFunc)kassette_class_init,
+          NULL,
+          NULL,
+		  sizeof(Kassette),
+		  16,
+          NULL
+		};
+
+	  const GInterfaceInfo cleanable_info =
+		{
+		  kassette_cleanable_init,
+		  NULL,
+		  NULL
+		};
+
+      /* Typ registrieren, Kennung der Oberklasse
+		 TYPE_MEDIA */
+	  kassette_type =
+		g_type_register_static(TYPE_MEDIA,
+							   "Kassette",
+                               &kassette_info,
+							   0);
+
+	  g_type_add_interface_static(kassette_type,
+								  TYPE_CLEANABLE,
+								  &cleanable_info);
+	}
+
+  return kassette_type;
+}
+
+void kassette_set_minuten(Kassette *kassette,
+						  guint minuten)
+{
+  g_return_if_fail(IS_KASSETTE(kassette));
+
+  if (kassette->minuten != minuten)
+	{
+	  kassette->minuten = minuten;
+	  g_object_notify(G_OBJECT(kassette), "minuten");
+	}
+}
+
+const gboolean
+kassette_get_minuten(Kassette *kassette)
+{
+  g_return_if_fail(IS_KASSETTE(kassette));
+
+  return kassette->minuten;
+}
+
+enum {
+  PROP_0_KASSETTE,
+  PROP_MINUTEN
+};
+
+static void kassette_set_property(GObject *object,
+                                  guint prop_id,
+							      const GValue *wert,
+							      GParamSpec *pspec)
+{
+  Kassette *kassette;
+  kassette = KASSETTE(object);
+
+  switch(prop_id)
+	{
+	case PROP_MINUTEN:
+	  kassette_set_minuten(kassette,
+						   g_value_get_uint(wert));
+	  break;
+
+	default:
+	  G_OBJECT_WARN_INVALID_PROPERTY_ID(object, 
+										prop_id,
+										pspec);
+	  break;
+	}
+}
+
+static void kassette_get_property(GObject *object,
+                                  guint prop_id,
+                                  GValue *wert,
+                                  GParamSpec *pspec)
+{
+  Kassette *kassette;
+  kassette = KASSETTE(object);
+
+  switch(prop_id)
+	{
+	case PROP_MINUTEN:
+	  g_value_set_uint(wert, kassette->minuten);
+	  break;
+
+	default:
+	  G_OBJECT_WARN_INVALID_PROPERTY_ID(object,
+										prop_id,
+										pspec);
+	  break;
+	}
+}
+
+static void
+kassette_class_init(KassetteClass *klasse)
+{
+  GObjectClass *g_object_klasse;
+ 
+  g_object_klasse = G_OBJECT_CLASS(klasse);
+  g_object_klasse->set_property =
+	kassette_set_property;
+  g_object_klasse->get_property =
+	kassette_get_property;
+
+  g_object_class_install_property(
+      g_object_klasse,
+	  PROP_MINUTEN,
+	  g_param_spec_uint("minuten",
+						"Spieldauer",
+						"Spieldauer der Kassette in Minuten",
+						20,
+						90,
+						60,
+						G_PARAM_READWRITE
+					   |G_PARAM_CONSTRUCT_ONLY));
+}
+
+/***** Schnittstelle Cleanable fertigstellen *********************/
+
+static guint cleanable_base_init_count = 0;
+
+static void cleanable_base_init(CleanableClass *cleanable)
+{
+  cleanable_base_init_count++;
+  if (cleanable_base_init_count == 1)
+	{
+	  /* z.B. Signale anmelden */
+	}
+}
+
+static void cleanable_base_finalize(CleanableClass *cleanable)
+{
+  cleanable_base_init_count--;
+  if (cleanable_base_init_count == 0)
+	{
+	  /* z.B. Signale abmelden */
+	}
+}
+
+GType cleanable_get_type(void)
+{
+  static GType cleanable_type = 0;
+
+  if (!cleanable_type)
+	{
+	  static const GTypeInfo cleanable_info =
+		{
+		  sizeof(CleanableClass),
+		  (GBaseInitFunc)cleanable_base_init,
+		  (GBaseFinalizeFunc)cleanable_base_finalize
+		};
+
+	  cleanable_type = g_type_register_static(G_TYPE_INTERFACE,
+											  "Cleanable",
+											  &cleanable_info,
+											  0);
+	  g_type_interface_add_prerequisite(cleanable_type,
+										TYPE_MEDIA);
+	}
+
+  return cleanable_type;
+}
+
+void cd_reinigen(Cleanable *cleanable)
+{
+  g_assert(IS_CD(CD(cleanable)));
+  
+  g_print("CD wird gereinigt.\n");
+}
+
+void kassette_reinigen(Cleanable *cleanable)
+{
+  g_assert(IS_KASSETTE(KASSETTE(cleanable)));
+  
+  g_print("Kassette wird gereinigt.\n");
+}
+
+
+static void cd_cleanable_init(gpointer interface, gpointer data)
+{
+  CleanableClass *cleanable = interface;
+  g_assert(G_TYPE_FROM_INTERFACE(cleanable)
+		   == TYPE_CLEANABLE);
+  g_assert(cleanable_base_init_count > 0);
+ 
+  cleanable->reinigen = cd_reinigen;
+}
+
+static void kassette_cleanable_init(gpointer interface, gpointer data)
+{
+  CleanableClass *cleanable = interface;
+  g_assert(G_TYPE_FROM_INTERFACE(cleanable)
+		   == TYPE_CLEANABLE);
+  g_assert(cleanable_base_init_count > 0);
+ 
+  cleanable->reinigen = kassette_reinigen;
+}
+
+void reinigen(Cleanable *object)
+{
+  CleanableClass *schnittstelle;
+
+  g_return_if_fail(IS_CLEANABLE(object));
+
+  schnittstelle = CLEANABLE_GET_CLASS(object);
+  g_object_ref(object);
+  schnittstelle->reinigen(object);
+  g_object_unref(object);
+}
+
+int main(int argc, char **argv)
+{
+  Media *media, *media2, *media_weak, *m2;
+  CD *cd;
+  Kassette *kassette;
+  guint min, nr, i, *sigs;
+  gboolean is_unpacked;
+  Cleanable *cleanable;
+  gulong handler_id;
+  gulong hook_id;
+
+  g_type_init();
+
+  /* --- creating objects --- */
+
+  g_print("\n* creating objects...\n");
+
+  /* create an object, setting some properties */
+  media = g_object_new(TYPE_MEDIA,
+                       "inv_nr", 42,
+                       "orig_package", FALSE,
+                       NULL);
+
+  /* --- setting and retrieving properties --- */
+
+  g_print("\n* testing properties...\n");
+
+  /* get previous values */
+  g_print("Previous values: ");
+  g_object_get(media,
+	       "orig_package", &is_unpacked,
+               "inv_nr", &nr,
+               NULL);
+  g_print("inv_nr = %d, orig_package = %s\n",
+	   nr, is_unpacked ? "TRUE" : "FALSE");
+
+  /* set new values */
+  g_print("Setting inv_nr = 37, orig_package = TRUE\n");
+  g_object_set(media,
+	       "orig_package", TRUE,
+               "inv_nr", 37,
+               NULL);
+
+  /* double-check those new values */
+  g_print("Verifying.. ");
+  g_object_get(media,
+	       "orig_package", &is_unpacked,
+               "inv_nr", &nr,
+               NULL);
+  g_print("inv_nr = %d, orig_package = %s\n",
+	   nr, is_unpacked ? "TRUE" : "FALSE");
+
+
+  /* --- some tests on an object that inherits --- */
+
+  g_print("\n* Testing some other crap...\n");
+
+  cd = g_object_new(TYPE_CD,
+					"inv_nr", 69,
+					"writable", FALSE,
+					NULL);
+
+  g_object_get(cd,
+			   "inv_nr", &nr,
+			   "writable", &is_unpacked,
+			   NULL);
+  g_print("writable = %s, inv_nr = %d\n", is_unpacked?"wahr":"falsch", nr);
+
+  g_signal_emit_by_name(cd, "unpack", NULL);
+
+  kassette = g_object_new(TYPE_KASSETTE,
+						  "minuten", 90,
+						  NULL);
+
+  g_object_get(kassette, "minuten", &min, NULL);
+  g_print("Spieldauer von kassette = %d min\n", min);
+
+  if (IS_MEDIA(kassette)) {
+      g_print("hey homey, that's one\n", min);
+  } else {
+      g_print("whoa boy no\n", min);
+  }
+
+
+  reinigen(CLEANABLE(cd));
+  reinigen(CLEANABLE(kassette));
+
+  /* --- signals --- */
+
+  g_print("\n* Testing signals...\n");
+
+  g_signal_emit_by_name(media, "unpack");
+  /* expect "Media unpacked." */
+
+  g_signal_emit_by_name(media, "unpack");
+  /* expect "Media already unpacked." */
+
+  g_signal_emit_by_name(media, "throw_out", TRUE);
+  /* expect "Media to be permanently trashed." */
+
+  /* Note that in this example program, the above only prints
+   * a message. It doesn't actually mark the object for deletion
+   * or anything.
+   */
+
+  /* SIGNAL RETURN VALUES:
+   * If you'd like throw_out to gboolean, you can get a return value if you:
+   *
+   * 1. change the function and its prototype
+   * 2. change the signal definition in the media class structure
+   * 3. add a marshaller with glib-genmarshal
+   * 4. change signal installer in the class initializer (media_class_init):
+   *    a. replace the marshaller with the new one from step 3
+   *    b. change the return type from G_TYPE_NONE to G_TYPE_BOOLEAN
+   *
+   * Then, use something like this to get a return value:
+   *
+   * gboolean return_val;
+   * ...
+   *
+   * g_signal_emit_by_name(media, "throw_out", TRUE, &return_val);
+   *
+   * if (return_val) {
+   *    g_print("Signal (throw_out): returned TRUE.\n");
+   * } else {
+   *    g_print("Signal (throw_out): returned FALSE.\n");
+   * }
+   *
+   */
+
+  /* user-defined signal handlers */
+
+  g_print(" - User-defined handlers...\n");
+  /* connect new handler */
+  handler_id = g_signal_connect(media,
+				"unpack",
+				(GCallback) meep_meep,
+				NULL);
+
+  g_signal_emit_by_name(media, "unpack");
+  /* expect "Meep Meep (...)" then "Media already unpacked */
+
+  /* test and disconnect handlers */
+  if (g_signal_handler_is_connected(media, handler_id)) {
+    g_print("meepmeep is connected to media.\n");
+  }
+
+  g_signal_handler_disconnect(media, handler_id);
+
+  if (!g_signal_handler_is_connected(media, handler_id)) {
+    g_print("meepmeep no longer connected; observe:\n");
+    g_signal_emit_by_name(media, "unpack");
+  }
+
+  /* signal details */
+  g_print(" - details...\n");
+
+  /* connect handlers with ding and dong details */
+  g_signal_connect(media, "unpack::ding",
+		   (GCallback)ding, NULL);
+
+  g_signal_connect(media, "unpack::dong",
+		   (GCallback)dong, NULL);
+
+  g_signal_emit_by_name(media, "unpack::ding");
+  /* expect "Ding," then "Media ... unpacked" */
+
+  g_signal_emit_by_name(media, "unpack::dong");
+  /* expect "Dong," then "Media ... unpacked" */
+
+  g_signal_emit_by_name(media, "unpack");
+  /* expect only "Media ... unpacked" */
+
+
+  /* signal hooks */
+  g_print(" - hooks...\n");
+
+  /* create two new objects */
+  m2 = g_object_new(TYPE_MEDIA, "inv_nr", 98,
+                                "orig_package", TRUE,
+                                NULL);
+
+  /* add an emissions hook */
+  hook_id = g_signal_add_emission_hook
+	     (media_signal[UNPACK],
+	      0,
+	      (GSignalEmissionHook)my_hook,
+	      NULL, NULL);
+
+  /* test the hook on three different objects */
+  g_signal_emit_by_name(media, "unpack");
+  g_signal_emit_by_name(m2, "unpack");
+  g_signal_emit_by_name(media, "unpack");
+
+  /* this time, the hook should no longer be active */
+  g_signal_emit_by_name(media, "unpack");
+
+  g_print(" - check all signals...\n");
+
+  sigs = g_signal_list_ids(TYPE_MEDIA, &nr);
+  g_print("ID    Name\n");
+  g_print("----  -------------\n");
+  i = 0;
+  while (i < nr) {
+      g_print("%-4d  %s\n", *sigs, g_signal_name(*sigs));
+      i++;
+      sigs++;
+  }
+  g_print("\nTotal signals: %d\n", nr);
+
+  /* --- references --- */
+
+  g_print("\n* Testing references...\n");
+  /* set media2 to a strong reference from media */
+  media2 = g_object_ref(media);
+
+  /* set media_weak to a weak reference to media2 */
+  g_object_add_weak_pointer(G_OBJECT(media2),
+                            (gpointer) &media_weak);
+
+  /* remove one strong reference */
+  g_object_unref(media2);
+
+  /* see if media_weak is NULL, meaning that object is gone */
+  if (media_weak == NULL) {
+      g_print("media_weak is NULL; object gone\n");
+  }
+
+  /* remove another strong reference */
+  g_object_unref(media);
+
+  /* check the weak pointer again */
+  if (media_weak == NULL) {
+      g_print("media_weak is NULL; object gone\n");
+  }
+
+  g_object_unref(m2);
+
+  return 0;
+}
+@

@@ -1,0 +1,46 @@
+body
+{
+	background-color:#000000;
+	color:#AAAAAA;
+	padding:0 14% 0 14%;
+}
+a
+{
+	color:#00AA00;
+}
+a:hover
+{
+	color:#338833;
+}
+a.menu
+{
+	background-color:#000000;
+	padding:4px 10px 4px 10px;
+}
+a.menu:hover
+{
+	background-color:#414141;
+	color:#004400;
+}
+font.menu
+{
+	background-color:#202020;
+	padding:4px 10px 4px 10px;
+}
+font.dir
+{
+	font-size:small;
+	color:#696969;
+	font-weight:bold;
+}
+font.title
+{
+	font-size:x-large;
+	color:#696969;
+}
+font.sub
+{
+	font-size:large;
+	font-weight:bold;
+	color:#696969;
+}

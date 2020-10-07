@@ -1,0 +1,110 @@
+Language Suit for OpenCy:
+
+cU\1	//A Lambda, unLambda, functional, logic, stack programming paradigm fusion for artificial intelligence.
+		// .cu1
+
+fabprol	//Formula ABstraction PROgramming Language. A fortran like language for number crunching
+		//but also good as a scripting language like python, ruby and lua. Can be compiled or interpreted.
+		//Syntax is a mix between python, ruby, lua and fortran.
+		// .fbl
+
+
+cell	//Systems programming language with C level memory management,
+		//C++ data abstraction and OOP-like features. But instead is based on a different theoretical foundation.
+		//It still uses encapsulation, inheritance and other OOD paradigms, but abstracts the abstraction. As opposed
+		//to abstracting memory as a concrete idea like objects, it abstracts the abstraction. Thus, Abstract Oriented
+		//Programming. The functional programming of fabprol is inspired by C++11/14 functionality but will be more
+		//streamlined in the language. Core idea:
+		//Make 
+		//Can compile and "inline" C/C++ code (eventually C-like languages: ObjC, Rust, Go, perl, D), ada, fortran and assembly
+		//Likewise, can compile functional languages, such as Lisp, Scheme, Racket, Poplog, Haskell by converting to cell code
+		//Consider treated classes like structs the way early C++ compiled in to C code.
+		// .cll
+
+Cy	 	//Specializes windowing and graphics. Designed to allow for
+		//related functions to spawn in a logical way, thus reducing
+		//the amount of widgit functions in an API.
+		//Experiment with creating a simplifying wrapper for OpenGL with behaves in desired manner.
+		// .cy
+
+spl		//Script Processing Language
+		//Will be used to 
+		// .spl
+
+Formula ABstraction PROgramming Language
+FABPROL
+cell
+Cy
+cU\1
+SPL
+
+C
+C++
+Fortran
+Ruby
+Lua
+Python
+Lisp/Scheme
+Rust
+Objective-C
+Ada
+Eiffel
+Pop-11
+Ocaml
+Clojure
+D
+Go
+Forth
+ML
+perl
+tcl/tk
+Prolog
+Scala
+Vala
+Unlambda
+Joy
+Simula
+Algol-68
+Java
+Factor
+Haskell
+APL
+CLU
+Icon
+erlang
+harlan
+Ceylon
+Zimbu
+X10
+haXe
+ZPL
+Chapel
+Self
+Agora
+Io
+Cel
+Lisaac
+Red
+Factor
+Actor model
+
+
+For fun: lolcode
+
+if-loop
+
+do: ...
+
+while(exp1):
+	if(exp2) then
+		...
+	else
+		...
+
+An if-loop enables a do while loop with the additional structure of verifying an expression and executing a block of code if expression is not met.
+
+do-for loops
+
+while-if loops
+
+for-if loops

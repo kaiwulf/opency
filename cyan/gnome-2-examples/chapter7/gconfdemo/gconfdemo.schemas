@@ -1,0 +1,15 @@
+<gconfschemafile>
+ <schemalist>
+  <schema>
+   <key>/schemas/apps/gconfdemo/show_nums_as_words</key>
+   <applyto>/apps/gconfdemo/show_nums_as_words</applyto>
+   <owner>gconfdemo</owner>
+   <type>bool</type>
+   <locale name="C">
+      <default>true</default>
+      <short>Numbers as words</short>
+      <long>Display numbers as words?</long>
+   </locale>
+  </schema>
+ </schemalist>
+</gconfschemafile>

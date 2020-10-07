@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Example
+_Comment=MiracleText Word Processor
+_Name=Edit documents with MiracleText
+TryExec=example
+Exec=example %U
+Icon=example.png
+Terminal=0
+Type=Application
+Categories=Application

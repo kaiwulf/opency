@@ -1,0 +1,65 @@
+# Example package.
+# Copyright (C) 2003 J. Random Developer
+# This file is distributed under the same license as the example package.
+# J. Random Developer <jrd@example.com>, 2003.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Example 0.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-07-03 16:51-0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Example Translator Team <ett@example.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/main.c:7
+msgid "egg"
+msgstr ""
+
+#: src/main.c:8
+msgid "miracle"
+msgstr ""
+
+#: src/main.c:9
+msgid "drill"
+msgstr ""
+
+#: src/main.c:15
+msgid "strings:\n"
+msgstr ""
+
+#: example.desktop.in.h:1
+msgid "Edit documents with MiracleText"
+msgstr ""
+
+#: example.desktop.in.h:2
+msgid "MiracleText Word Processor"
+msgstr ""
+
+#: example.keys.in.h:1
+msgid "Documents/Spreadsheet"
+msgstr ""
+
+#: example.keys.in.h:2
+msgid "Documents/Word Processor"
+msgstr ""
+
+#: example.keys.in.h:3
+msgid "MiracleCalc spreadsheet"
+msgstr ""
+
+#: example.keys.in.h:4
+msgid "MiracleOffice plugin library"
+msgstr ""
+
+#: example.keys.in.h:5
+msgid "MiracleText document"
+msgstr ""
+
+#: example.keys.in.h:6
+msgid "System"
+msgstr ""

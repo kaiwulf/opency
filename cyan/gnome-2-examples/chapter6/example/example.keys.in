@@ -1,0 +1,20 @@
+application/x-miracletext
+	_category=Documents/Word Processor
+	_description=MiracleText document
+	icon_filename=miracletext-appicon.png
+	default_action_type=application
+	short_list_application_ids=miracletext
+	use_category_default=yes
+
+application/x-miraclecalc
+	_category=Documents/Spreadsheet
+	_description=MiracleCalc spreadsheet
+	icon_filename=miraclecalc-appicon.png
+	default_action_type=application
+	short_list_application_ids=miraclecalc
+	use_category_default=yes
+
+application/x-miracleoffice-plugin
+	_category=System
+	_description=MiracleOffice plugin library
+	icon_filename=miracle-pluginicon.png

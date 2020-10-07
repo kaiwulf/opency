@@ -1,0 +1,27 @@
+The GNOME 2 Developer's Guide
+Programming Examples
+(C) 2001, 2002 by Matthias Warkus  <mawarkus\at/gnome.org>
+(C) 2003 by Brian Ward  http://www.o--o.net/
+
+This is the accompanying source code to The GNOME 2 Developer's Guide, by
+Matthias Warkus (No Starch Press, http://www.nostarch.com/).
+
+The code is arranged by chapter in the following subdirectories:
+
+chapter1: GLib
+chapter2: GObject
+chapter3: GTK+
+chapter4: GNOME 
+chapter5: Glade 
+chapter6: Other Tools (autoconf, gettext, intltool, etc.)
+chapter7: GConf
+chapter8: GnomeVFS
+
+Each programming example comes with a small Makefile that should work fine
+with a properly-configured GNOME 2 system. The exception to this is the
+Chapter 6 example, a fairly extensive source tree demonstration of the
+GNU autoconf system.
+
+This source code comes under the terms of the GNU GPL; see the COPYING file
+inside this directory if you have not seen it yet.
+

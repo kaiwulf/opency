@@ -1,0 +1,8 @@
+application/x-miracletext
+        ext: mtx
+
+application/x-miraclecalc
+        ext: mcl
+
+application/x-miracleoffice-plugin
+        regex,2: ^miracle-.*-plugin.so$
