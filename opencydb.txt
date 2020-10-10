@@ -1,0 +1,6 @@
+CREATE TABLE opency( menu_id int(11),
+label varchar(255) not null,
+link varchar(255) not null,
+target varchar(255) not null,
+sort int(5)
+);

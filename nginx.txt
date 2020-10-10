@@ -1,0 +1,1 @@
+/user/share/doc/{nginx,nginx-common,nginx-core,nginx-doc,nginx-full}
